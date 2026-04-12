@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { sendEmail } from "../utils/sendEmail.js"
 import { sendToken } from "../utils/sendToken.js"
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 export const signup = async (req, res, next) => {
   try {
@@ -388,7 +389,7 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
   try {
     await sendEmail({
       email: user.email,
-      subject: "✅ Clarity - Password Reset Successful",
+      subject: "✅ Rasoi - Password Reset Successful",
       message: `
       <div style="font-family: 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 26px; border-radius: 14px; background: linear-gradient(135deg, #ffffff, #f7fbff); box-shadow: 0 10px 25px rgba(0,0,0,0.08);">
 
@@ -464,6 +465,4 @@ export const resetPassword = catchAsyncError(async (req, res, next) => {
   } catch (error) {
     console.error("Error sending confirmation email: ", error)
   }
-
-  sendToken(user, 200, "Reset Password Successfully.", res)
 })
