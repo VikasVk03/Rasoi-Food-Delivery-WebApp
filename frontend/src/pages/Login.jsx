@@ -24,31 +24,53 @@ function Login() {
 
   const handleLogin = async () => {
     try {
-      const result = await axios
-        .post(
-          `${serverUrl}/api/auth/login`,
-          {
-            email,
-            password,
+      const res = await axios.post(
+        `${serverUrl}/api/auth/login`,
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
           },
-          {
-            withCredentials: true,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        )
-        .then((res) => {
-          toast.success(res.data.message, {
-            onClose: () => navigate("/"),
-            autoClose: 2000,
-          });
-          setIsAuthenticated(true);
-          setUser(res.data.user);
-          navigate("/");
-        });
-      console.log(`Remove this log after completion`);
-      console.log(result);
+        },
+      );
+
+      setIsAuthenticated(true);
+      setUser(res.data.user);
+      toast.success(res.data.message || "Login successful");
+
+      if (res.data.user?.role === "RestaurantOwner") {
+        try {
+          const ownerStatus = await axios.get(
+            `${serverUrl}/api/owner/restaurant-status`,
+            { withCredentials: true },
+          );
+          if (ownerStatus.data?.hasRestaurant) {
+            navigate("/owner/dashboard");
+          } else {
+            navigate("/owner/setup");
+          }
+          return;
+        } catch {
+          navigate("/owner/setup");
+          return;
+        }
+      }
+
+      if (res.data.user?.role === "DeliveryBoy") {
+        navigate("/delivery/dashboard");
+        return;
+      }
+
+      if (res.data.user?.role === "Admin") {
+        navigate("/admin/dashboard");
+        return;
+      }
+
+      navigate("/");
     } catch (error) {
       toast.error(error.response?.data?.message || "Login Failed");
     }
@@ -143,6 +165,14 @@ function Login() {
           Want to create New Account?{" "}
           <span className="text-[#ff4d2d] hover:text-[#e64323] cursor-pointer font-semibold">
             Signup
+          </span>
+        </p>
+        <p className="text-center mt-2 text-sm">
+          <span
+            className="text-[#ff4d2d] hover:text-[#e64323] cursor-pointer font-semibold"
+            onClick={() => navigate("/admin/login")}
+          >
+            Admin Login
           </span>
         </p>
       </div>

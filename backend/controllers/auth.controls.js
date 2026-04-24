@@ -14,6 +14,9 @@ export const signup = async (req, res, next) => {
     if (!fullName || !email || !password || !mobile || !role) {
       return next(new ErrorHandler("All Fields are required.", 400))
     }
+    if (role === "Admin") {
+      return next(new ErrorHandler("Admin signup is not available.", 403));
+    }
 
 
     if (password.length < 8 || password.length > 32) {
@@ -289,6 +292,35 @@ export const login = catchAsyncError(async (req, res, next) => {
   sendToken(user, 200, "User logged in successfully.", res)
 
 })
+
+export const adminLogin = catchAsyncError(async (req, res, next) => {
+  const { email, password } = req.body;
+  if (email !== "admin@rasoi.com" || password !== "123456789") {
+    return next(new ErrorHandler("Invalid admin credentials.", 401));
+  }
+
+  let adminUser = await User.findOne({ email: "admin@rasoi.com" });
+  if (!adminUser) {
+    adminUser = await User.create({
+      fullName: "Rasoi Admin",
+      email: "admin@rasoi.com",
+      password: "123456789",
+      mobile: "9999999999",
+      role: "Admin",
+      accountVerified: true,
+    });
+  } else {
+    if (adminUser.role !== "Admin") {
+      return next(new ErrorHandler("Configured admin email belongs to a non-admin user.", 403));
+    }
+    if (!adminUser.accountVerified) {
+      adminUser.accountVerified = true;
+      await adminUser.save({ validateBeforeSave: false });
+    }
+  }
+
+  sendToken(adminUser, 200, "Admin logged in successfully.", res);
+});
 
 export const logout = catchAsyncError(async (req, res, next) => {
   res
