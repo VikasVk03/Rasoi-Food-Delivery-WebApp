@@ -13,7 +13,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import RestaurantMenu from "./pages/RestaurantMenu";
 
-export const serverUrl = "http://localhost:8000";
+export const serverUrl = "https://rasoi-food-delivery-webapp.onrender.com";
 
 const App = () => {
   return (
