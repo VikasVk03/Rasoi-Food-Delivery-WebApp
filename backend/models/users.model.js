@@ -35,8 +35,13 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["User", "RestaurantOwner", "DeliveryBoy"],
+      enum: ["User", "RestaurantOwner", "DeliveryBoy", "Admin"],
       required: true,
+    },
+    foodPreference: {
+      type: String,
+      enum: ["all", "veg", "jain", "non-veg"],
+      default: "all",
     },
   },
   // { timestamps: true },

@@ -1,0 +1,121 @@
+Rasoi Food Delivery WebApp - Features and Tech Stack
+====================================================
+
+1) Core Features
+----------------
+- Multi-role authentication and authorization:
+  - User
+  - RestaurantOwner
+  - DeliveryBoy
+  - Admin
+
+- Authentication flows:
+  - Signup and OTP verification
+  - Login
+  - Forgot password and reset password
+
+- Customer features:
+  - Browse restaurants
+  - Search and filter by food preference (all/veg/jain/non-veg)
+  - Open restaurant details/menu
+  - Add menu items to cart
+  - Place order with delivery address and location
+  - Track order status and live delivery updates via socket
+
+- Order lifecycle and status flow:
+  - pending -> accepted -> preparing -> ready -> picked -> delivered
+  - rejected supported as terminal failure state
+
+- Restaurant owner features:
+  - Setup restaurant profile
+  - CRUD for menu items
+  - Process incoming orders with controlled status transitions
+  - Dashboard insights (sales/daily summaries)
+
+- Delivery features:
+  - See only "ready" orders in available queue
+  - Accept order (ready -> picked)
+  - Share live location updates
+  - Complete delivery (picked -> delivered)
+  - Earnings dashboard/insights
+
+- Admin features:
+  - Admin login/dashboard
+  - Platform-level overview (users, restaurants, live orders, delivered insights)
+
+- Recommendation system:
+  - Restaurant recommendations (context-aware + hybrid scoring)
+  - Food item recommendations (context-aware + hybrid scoring)
+  - Works for cold-start (non-login) and personalized (logged-in) sessions
+
+- Realtime communication:
+  - Socket rooms for order tracking
+  - Push updates for status and live delivery path/location
+
+
+2) Backend Tech Stack
+---------------------
+- Runtime: Node.js
+- Language: JavaScript (ES modules)
+- Framework: Express (v5)
+- Database: MongoDB
+- ODM: Mongoose
+- Authentication: JWT + cookies
+- Password hashing: bcryptjs
+- Realtime: Socket.IO
+- Email: Nodemailer
+- Scheduling/Cron: node-cron
+- Config: dotenv
+- Dev server: nodemon
+
+Backend structure includes:
+- Controllers, routes, models
+- Middlewares (auth validation, error handling)
+- Seed scripts (home data seeding)
+- Utility modules (insights, pathfinding)
+
+
+3) Frontend Tech Stack
+----------------------
+- Framework/UI: React 19
+- Build tool: Vite
+- Routing: react-router-dom
+- HTTP client: axios
+- Notifications: react-toastify
+- Styling: Tailwind CSS 4
+- Charts: chart.js + react-chartjs-2
+- Maps/geo visualization: leaflet
+- Realtime client: socket.io-client
+- Icons: react-icons
+- Linting: ESLint
+
+
+4) API and Architecture Characteristics
+---------------------------------------
+- REST-style API endpoints:
+  - /api/auth/*
+  - /api/restaurants/*
+  - /api/orders/*
+  - /api/owner/*
+  - /api/delivery/*
+  - /api/admin/*
+
+- Role-protected routes using middleware guards
+- Cookie-based authenticated requests from frontend with credentials
+- Realtime socket channels per order for tracking updates
+- Recommendation APIs:
+  - /api/restaurants/recommendations
+  - /api/restaurants/recommendations/foods
+
+
+5) Data/Model Highlights
+------------------------
+- User model includes role, verification and preference fields
+- Restaurant model includes owner, cuisine, rating, and geo location
+- Menu model links items to restaurants and supports veg/jain tags
+- Order model supports:
+  - item lines and pricing
+  - status lifecycle
+  - user/restaurant/delivery references
+  - delivery and route tracking coordinates
+

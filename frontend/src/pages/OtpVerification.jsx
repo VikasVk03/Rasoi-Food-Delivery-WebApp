@@ -120,13 +120,13 @@ const OtpVerification = () => {
             ))}
           </div>
 
-          {/* Verify Button */}
+          {/* Verify Button*/}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-[#fff9f6] hover:bg-[#e64323] hover:text-white text-[#ff4d2d] font-semibold rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-200"
+            className="w-full py-3 px-4 bg-[#ff4d2d] hover:bg-[#e64323] hover:text-white text-white font-semibold rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-200"
           >
-            {loading ? "Verifying..." : "✅ Verify OTP"}
+            {loading ? "Verifying..." : "Verify OTP"}
           </button>
         </form>
 

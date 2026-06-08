@@ -1,0 +1,215 @@
+Recommendation System Details (Restaurant + Food)
+=================================================
+
+This document explains the exact algorithm, math, and logic used for both
+restaurant and food recommendation APIs in this project.
+
+Related Endpoints
+-----------------
+1) Restaurant recommendations:
+   GET /api/restaurants/recommendations
+
+2) Food recommendations:
+   GET /api/restaurants/recommendations/foods
+
+
+A) High-Level Approach
+----------------------
+Both recommenders use a hybrid scoring model with plain JavaScript math.
+No ML framework is used. The idea is to combine:
+
+1) Context-aware signals
+   - Current location (lat/lng)
+   - Time-of-day bucket (breakfast/lunch/dinner/late-night)
+   - Device/session context
+
+2) Content-based signals
+   - Search term and search history
+   - Food attributes (name/category/veg/jain)
+   - Restaurant attributes (name/cuisine)
+   - Favorites signal
+
+3) Collaborative-like signals
+   - Historical user order behavior
+   - Cuisine affinity (restaurant recommender)
+   - Item affinity via previous item quantities (food recommender)
+
+
+B) Mathematical Components
+--------------------------
+
+1) Distance using Haversine formula
+-----------------------------------
+Used for geospatial relevance between user location and restaurant location.
+
+Given points A(lat1, lng1), B(lat2, lng2):
+
+dLat = radians(lat2 - lat1)
+dLng = radians(lng2 - lng1)
+a = sin^2(dLat/2) + cos(radians(lat1)) * cos(radians(lat2)) * sin^2(dLng/2)
+c = 2 * atan2(sqrt(a), sqrt(1-a))
+distanceKm = R * c, where R = 6371 km
+
+Proximity normalization:
+normalizedProximity = 1 / (1 + distanceKm)
+
+Why:
+- Produces value in (0, 1]
+- Nearby entities get higher scores
+- Smoothly decays as distance increases
+
+
+2) Popularity normalization
+---------------------------
+rating normalized to [0, 1]:
+
+normalizedPopularity = clamp(rating / 5, 0, 1)
+
+Why:
+- Keeps comparable scale with other signals
+- Prevents one metric from dominating purely due to unit differences
+
+
+3) Time bucket relevance
+------------------------
+Current hour mapped to:
+- breakfast: 05:00-10:59
+- lunch: 11:00-15:59
+- dinner: 16:00-21:59
+- late-night: rest
+
+Then category matching gives:
+- strong match -> 1
+- weak/default -> 0.35
+
+Restaurant logic:
+- breakfast prefers menu categories containing "breakfast"
+- lunch/dinner prefers "main" and dinner-like categories
+
+Food logic:
+- breakfast prefers breakfast categories
+- lunch/dinner prefers main/thali/dinner style categories
+
+
+4) Content-based match signal
+-----------------------------
+If current/session search terms match item/restaurant attributes:
+contentMatch = 1
+Else:
+contentMatch = 0.4
+
+Matching sources:
+- Restaurant: restaurant name, cuisine type
+- Food: item name, item category, restaurant cuisine/name
+
+Favorites:
+favoriteBoost = 1 if restaurant is in favorites, else 0
+
+
+5) Collaborative-like behavior signal
+-------------------------------------
+Restaurant recommender:
+- Build cuisine frequency from user's past orders
+- For each restaurant:
+  collaborativeSignal = min(cuisineAffinity / totalUserOrders, 1)
+- If no order history:
+  collaborativeSignal = 0.3 (cold-start baseline)
+
+Food recommender:
+- Build item weight from past ordered item quantities
+- For each menu item:
+  collaborativeSignal = min(itemOrderWeight / totalUserOrders, 1)
+- If no history:
+  collaborativeSignal = 0.3
+
+
+C) Final Weighted Scores
+------------------------
+
+1) Restaurant recommendation score
+----------------------------------
+score =
+  normalizedPopularity * 0.28 +
+  normalizedProximity  * 0.27 +
+  timeCategoryMatch    * 0.17 +
+  contentMatch         * 0.12 +
+  collaborativeSignal  * 0.11 +
+  favoriteBoost        * 0.05
+
+Interpretation:
+- Popularity + proximity have strongest influence
+- Time and user behavior refine ranking
+- Favorites add a lightweight personalization boost
+
+
+2) Food recommendation score
+----------------------------
+score =
+  popularity           * 0.25 +
+  normalizedProximity  * 0.24 +
+  timeCategoryMatch    * 0.18 +
+  contentMatch         * 0.14 +
+  collaborativeSignal  * 0.14 +
+  favoriteBoost        * 0.05
+
+Interpretation:
+- Still strongly context-driven
+- Slightly higher weight to content + collaborative for item-level personalization
+
+
+D) End-to-End Logic by User Type
+--------------------------------
+
+1) Non-login user (cold start)
+------------------------------
+- No user order history available
+- Uses:
+  - location proximity
+  - current time bucket
+  - popularity
+  - session search/favorites where available
+- Collaborative-like signal falls back to baseline (0.3)
+
+
+2) Logged-in user
+-----------------
+- Fetches historical orders
+- Computes cuisine/item affinity
+- Applies full hybrid formula
+- Produces personalized ranking per user behavior
+
+
+E) Output Ranking and Metadata
+------------------------------
+- Candidate set is scored item-by-item
+- Sorted by score descending
+- API returns recommendationMeta containing:
+  - score
+  - distanceKm
+  - timeBucket
+  - (restaurant recommender also includes deviceType in meta)
+
+
+F) Complexity Notes
+-------------------
+Let:
+- R = number of restaurants
+- M = number of menu items
+- O = number of user orders
+
+Restaurant endpoint rough work:
+- Build menu map and score restaurants: O(R + M + O)
+
+Food endpoint rough work:
+- Score candidate menu items with joins: O(M + O)
+
+Both are linear over candidate data and suitable for moderate catalog sizes.
+
+
+G) Why this works without ML frameworks
+---------------------------------------
+- Uses deterministic weighted ranking (linear model)
+- Signals are interpretable and debuggable
+- Easy to tune per business priorities (distance vs popularity vs personalization)
+- Good baseline system for production iteration before adding advanced ML
+

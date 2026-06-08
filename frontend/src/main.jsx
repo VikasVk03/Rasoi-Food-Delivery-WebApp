@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import "leaflet/dist/leaflet.css";
 import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
 import { createContext, useEffect, useState } from "react";
@@ -23,6 +24,7 @@ const AppWrapper = () => {
     const publicRoutes = [
       "/login",
       "/signup",
+      window.location.pathname.includes("/otp-verification"),
       "/password/forgot",
       window.location.pathname.includes("/password/reset"),
     ];

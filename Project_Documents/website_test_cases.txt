@@ -1,0 +1,311 @@
+Rasoi Food Delivery WebApp - Test Cases
+=======================================
+
+Environment Setup
+-----------------
+1) Backend server running at http://localhost:8000
+2) Frontend server running via Vite (default http://localhost:5173)
+3) MongoDB connected and seeded (optional but recommended)
+4) Browser geolocation permission available for map and recommendation tests
+
+
+Section A: Authentication and User Management
+---------------------------------------------
+TC-AUTH-001
+Title: User signup with valid details
+Precondition: No account exists for email/mobile
+Steps:
+1. Open /signup
+2. Enter valid full name, email, password, mobile, role User
+3. Submit form
+Expected:
+- OTP flow is triggered
+- User sees verification step and success message
+
+TC-AUTH-002
+Title: OTP verification
+Precondition: OTP generated for account
+Steps:
+1. Open /otp-verification/:email
+2. Enter correct OTP
+3. Submit
+Expected:
+- Account becomes verified
+- User can login successfully
+
+TC-AUTH-003
+Title: Login with valid User credentials
+Precondition: Verified account exists
+Steps:
+1. Open /login
+2. Enter valid email/password
+3. Submit
+Expected:
+- Auth cookie/session is set
+- User redirected to home page
+
+TC-AUTH-004
+Title: Role-based redirect after login
+Precondition: Accounts exist for roles User, RestaurantOwner, DeliveryBoy, Admin
+Steps:
+1. Login as RestaurantOwner
+2. Login as DeliveryBoy
+3. Login as Admin
+Expected:
+- Owner goes to /owner/dashboard
+- Delivery boy goes to /delivery/dashboard
+- Admin goes to /admin/dashboard
+
+TC-AUTH-005
+Title: Forgot password and reset flow
+Precondition: Verified account exists
+Steps:
+1. Open /password/forgot and request reset
+2. Use reset link /password/reset/:token
+3. Set new password and login
+Expected:
+- Password reset succeeds
+- Login works with updated password
+
+
+Section B: Home, Restaurant Discovery, and Tracking
+---------------------------------------------------
+TC-HOME-001
+Title: Load restaurants on home page
+Steps:
+1. Open /
+Expected:
+- Restaurant cards are rendered
+- No console/API error
+
+TC-HOME-002
+Title: Search and food preference filter
+Steps:
+1. Enter search text in home search box
+2. Toggle filter All/Veg/Jain/Non-Veg
+Expected:
+- Restaurant list updates according to query/filter
+
+TC-HOME-003
+Title: Restaurant card opens menu detail page
+Steps:
+1. Click any restaurant card from home sections
+Expected:
+- User navigates to /restaurants/:restaurantId/menu
+- Menu list loads for selected restaurant
+
+TC-HOME-004
+Title: Food recommendation card opens full details
+Steps:
+1. In "Recommended Food Items", click any food card
+Expected:
+- User navigates to restaurant menu detail route
+- Restaurant details/menu are visible
+
+TC-HOME-005
+Title: User order tracking in home page
+Precondition: Logged in as User with at least one order
+Steps:
+1. In Recent Orders, click "Track Live"
+Expected:
+- Live Tracking map appears
+- Socket updates reflect latest order status/location
+
+
+Section C: Restaurant Menu, Cart, and Checkout
+----------------------------------------------
+TC-ORDER-001
+Title: Add food to cart and place order
+Precondition: Logged in as User
+Steps:
+1. Open any restaurant menu page
+2. Add multiple items to cart
+3. Enter delivery address
+4. Optionally click "Use Current Location"
+5. Click "Pay & Place Order"
+Expected:
+- Order placed successfully
+- Status starts at "pending"
+- User is redirected as implemented
+
+TC-ORDER-002
+Title: Prevent checkout with empty cart
+Steps:
+1. Open restaurant menu page
+2. Without adding items, click checkout
+Expected:
+- Error toast: cart is empty
+- No order created
+
+TC-ORDER-003
+Title: Prevent checkout without delivery address
+Precondition: Cart has at least one item
+Steps:
+1. Keep address blank
+2. Click checkout
+Expected:
+- Error toast for missing address
+- No order created
+
+
+Section D: Owner Dashboard and Order Lifecycle
+----------------------------------------------
+TC-OWNER-001
+Title: Owner can create menu item
+Precondition: Logged in as RestaurantOwner with restaurant configured
+Steps:
+1. Open /owner/dashboard
+2. Fill food form and submit
+Expected:
+- New menu item appears in owner menu list
+
+TC-OWNER-002
+Title: Owner updates order status valid transitions
+Precondition: Order in owner dashboard with status pending
+Steps:
+1. Click Accept (pending -> accepted)
+2. Click Preparing (accepted -> preparing)
+3. Click Ready (preparing -> ready)
+Expected:
+- Each transition succeeds
+- Status updates visible in owner/user tracking
+
+TC-OWNER-003
+Title: Owner cannot do invalid transition
+Precondition: Order already in ready/picked/delivered/rejected
+Steps:
+1. Try invalid update by API or blocked UI action
+Expected:
+- Backend rejects invalid transition with error
+
+
+Section E: Delivery Dashboard Flow
+----------------------------------
+TC-DEL-001
+Title: Delivery dashboard shows only ready orders as available
+Precondition: At least one ready order with no deliveryBoyId
+Steps:
+1. Login as DeliveryBoy
+2. Open /delivery/dashboard
+Expected:
+- Available list includes only status "ready" orders
+
+TC-DEL-002
+Title: Accept delivery transitions ready -> picked
+Precondition: Ready order visible in delivery dashboard
+Steps:
+1. Click Accept on ready order
+Expected:
+- Order status becomes "picked"
+- Order appears in my deliveries
+
+TC-DEL-003
+Title: Live location update for picked order
+Precondition: Order picked by logged-in delivery boy
+Steps:
+1. Click "Update Live Location"
+2. Allow geolocation
+Expected:
+- Delivery location update API succeeds
+- Tracking route path updates for user/socket listeners
+
+TC-DEL-004
+Title: Mark delivered transitions picked -> delivered
+Precondition: Picked order exists for delivery boy
+Steps:
+1. Click "Mark Delivered"
+Expected:
+- Status changes to delivered
+- Delivered timestamp set
+
+
+Section F: Admin Dashboard
+--------------------------
+TC-ADMIN-001
+Title: Admin sees overview and live orders
+Precondition: Logged in as Admin
+Steps:
+1. Open /admin/dashboard
+Expected:
+- Users, restaurants, and order insights visible
+- Live orders include active statuses
+
+
+Section G: Recommendation Engine Validation
+-------------------------------------------
+TC-REC-001
+Title: Restaurant recommendation API returns ranked list
+Steps:
+1. Call GET /api/restaurants/recommendations with context params
+Expected:
+- Response includes recommendations[]
+- recommendationMeta.score exists and list sorted descending
+
+TC-REC-002
+Title: Food recommendation API returns ranked food items
+Steps:
+1. Call GET /api/restaurants/recommendations/foods with context params
+Expected:
+- Response includes recommendations[] with restaurant details
+- recommendationMeta.score exists and list sorted descending
+
+TC-REC-003
+Title: Cold-start recommendation (non-login)
+Precondition: No auth cookie
+Steps:
+1. Open home page with geolocation allowed
+Expected:
+- Recommendations still shown using context/popularity/proximity/time
+
+TC-REC-004
+Title: Personalized recommendation (logged in)
+Precondition: Auth user with historical orders
+Steps:
+1. Login as User and open home page
+Expected:
+- Recommendations include behavior-aware ranking
+- Different ranking from cold-start profile
+
+
+Section H: Security and Authorization
+-------------------------------------
+TC-SEC-001
+Title: Unauthorized access to owner routes
+Steps:
+1. Without owner role, call /api/owner/*
+Expected:
+- Access denied (401/403)
+
+TC-SEC-002
+Title: Unauthorized access to delivery routes
+Steps:
+1. Without DeliveryBoy role, call /api/delivery/*
+Expected:
+- Access denied (401/403)
+
+TC-SEC-003
+Title: User tracks only allowed orders
+Steps:
+1. Login as one user
+2. Try tracking another user's order
+Expected:
+- Access denied as per permission checks
+
+
+Section I: Basic Performance and UX
+-----------------------------------
+TC-UX-001
+Title: Home page loads without major layout shift
+Expected:
+- Main sections render in expected order
+
+TC-UX-002
+Title: Dashboard pages are navigable and responsive
+Expected:
+- Owner/Delivery/Admin pages usable on desktop width and no broken controls
+
+TC-UX-003
+Title: Toast notifications on action success/failure
+Expected:
+- User receives clear feedback for API outcomes
+
