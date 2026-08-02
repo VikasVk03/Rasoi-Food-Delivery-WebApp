@@ -12,11 +12,15 @@ import OwnerSetupRestaurant from "./pages/OwnerSetupRestaurant";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import RestaurantMenu from "./pages/RestaurantMenu";
+import { Analytics } from "@vercel/analytics/react"
 
 export const serverUrl = "https://rasoi-food-delivery-webapp.onrender.com";
+// export const serverUrl = "http://localhost:8000";
 
 const App = () => {
   return (
+    <>
+    <Analytics/>
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/signup" element={<SignUp />} />
@@ -31,6 +35,7 @@ const App = () => {
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/restaurants/:restaurantId/menu" element={<RestaurantMenu />} />
     </Routes>
+    </>
   );
 };
 
