@@ -9,8 +9,8 @@ export const sendToken = async (user, statusCode, message, res) => {
         Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000
       ),
       httpOnly: true,
-      secure: false, // ✅ true in production (HTTPS)
-      sameSite: "lax", // ✅ VERY IMPORTANT
+      secure: true, // ✅ true in production (HTTPS)
+      sameSite: "none", // ✅ VERY IMPORTANT
     })
     .json({
       success: true,
